@@ -3,8 +3,7 @@
 ## Loading and preprocessing the data
 
 ```r
-unzip(zipfile = "activity.zip")
-data <- read.csv("activity.csv")
+activity<-read.csv(file='C:/Users/vibhas/R/activity.csv', sep=',' ,header=TRUE)
 ```
 
 
@@ -12,14 +11,14 @@ data <- read.csv("activity.csv")
 
 ```r
 library(ggplot2)
-total.steps <- tapply(data$steps, data$date, FUN = sum, na.rm = TRUE)
-qplot(total.steps, binwidth = 1000, xlab = "total number of steps taken each day")
+tapply(activity$steps,activity$date,FUN=sum,na.rm=TRUE)->activity_msteps
+qplot(activity_msteps, binwidth=1000, xlab="total number of steps taken each day")
 ```
 
 ![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1.png) 
 
 ```r
-mean(total.steps, na.rm = TRUE)
+mean(activity_msteps,na.rm=TRUE)
 ```
 
 ```
@@ -27,7 +26,7 @@ mean(total.steps, na.rm = TRUE)
 ```
 
 ```r
-median(total.steps, na.rm = TRUE)
+median(activity_msteps, na.rm=TRUE)
 ```
 
 ```
@@ -39,10 +38,12 @@ median(total.steps, na.rm = TRUE)
 
 ```r
 library(ggplot2)
-averages <- aggregate(x = list(steps = data$steps), by = list(interval = data$interval), 
-    FUN = mean, na.rm = TRUE)
-ggplot(data = averages, aes(x = interval, y = steps)) + geom_line() + xlab("5-minute interval") + 
-    ylab("average number of steps taken")
+activity_avg <- aggregate(x=list(steps=activity$steps), by=list(interval=activity$interval),
+                          FUN=mean, na.rm=TRUE)
+ggplot(data=activity_avg, aes(x=interval, y=steps)) +
+  geom_line() +
+  xlab("5-minute interval") +
+  ylab("average number of steps taken")
 ```
 
 ![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2.png) 
@@ -52,7 +53,7 @@ On average across all the days in the dataset, the 5-minute interval contains
 the maximum number of steps?
 
 ```r
-averages[which.max(averages$steps), ]
+activity_avg[which.max(activity_avg$steps),]
 ```
 
 ```
@@ -67,7 +68,7 @@ There are many days/intervals where there are missing values (coded as `NA`). Th
 
 
 ```r
-missing <- is.na(data$steps)
+missing <- is.na(activity$steps)
 # How many missing
 table(missing)
 ```
@@ -86,10 +87,12 @@ interval.
 ```r
 # Replace each missing value with the mean value of its 5-minute interval
 fill.value <- function(steps, interval) {
-    filled <- NA
-    if (!is.na(steps)) 
-        filled <- c(steps) else filled <- (averages[averages$interval == interval, "steps"])
-    return(filled)
+  filled <- NA
+  if (!is.na(steps))
+    filled <- c(steps)
+  else
+    filled <- (activity_avg[activity_avg$interval==interval, "steps"])
+  return(filled)
 }
 filled.data <- data
 filled.data$steps <- mapply(fill.value, filled.data$steps, filled.data$interval)
@@ -99,8 +102,8 @@ Now, using the filled data set, let's make a histogram of the total number of st
 
 
 ```r
-total.steps <- tapply(filled.data$steps, filled.data$date, FUN = sum)
-qplot(total.steps, binwidth = 1000, xlab = "total number of steps taken each day")
+total.steps <- tapply(filled.data$steps, filled.data$date, FUN=sum)
+qplot(total.steps, binwidth=1000, xlab="total number of steps taken each day")
 ```
 
 ![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
@@ -136,13 +139,16 @@ this part, we use the dataset with the filled-in values.
 
 ```r
 weekday.or.weekend <- function(date) {
-    day <- weekdays(date)
-    if (day %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")) 
-        return("weekday") else if (day %in% c("Saturday", "Sunday")) 
-        return("weekend") else stop("invalid date")
+  day <- weekdays(date)
+  if (day %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"))
+    return("weekday")
+  else if (day %in% c("Saturday", "Sunday"))
+    return("weekend")
+  else
+    stop("invalid date")
 }
 filled.data$date <- as.Date(filled.data$date)
-filled.data$day <- sapply(filled.data$date, FUN = weekday.or.weekend)
+filled.data$day <- sapply(filled.data$date, FUN=weekday.or.weekend)
 ```
 
 
@@ -150,9 +156,9 @@ Now, let's make a panel plot containing plots of average number of steps taken
 on weekdays and weekends.
 
 ```r
-averages <- aggregate(steps ~ interval + day, data = filled.data, mean)
-ggplot(averages, aes(interval, steps)) + geom_line() + facet_grid(day ~ .) + 
-    xlab("5-minute interval") + ylab("Number of steps")
+averages <- aggregate(steps ~ interval + day, data=filled.data, mean)
+ggplot(averages, aes(interval, steps)) + geom_line() + facet_grid(day ~ .) +
+  xlab("5-minute interval") + ylab("Number of steps")
 ```
 
 ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
